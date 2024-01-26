@@ -88,7 +88,7 @@
                 alert('No file selected');
                 return;
             }
-            formData.append('file', inputFile[0]);
+            formData.append('file', inputFiles[0]);
             let statusText = document.getElementById('statusText');
             statusText.innerHTML = '<b><i>Grading...</i></b>';
             fetch('/grade', {
