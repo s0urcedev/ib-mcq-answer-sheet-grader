@@ -9,9 +9,20 @@
         }
 
         textarea {
-            width: 30vw;
+            width: 25vw;
             font-size: 20px;
             padding: 10px;
+        }
+
+        span {
+            font-size: 20px;
+        }
+
+        li {
+            font-size: 20px;
+            text-align: justify;
+            margin-right: 2vw;
+            margin-bottom: 0.5vw;
         }
     </style>
 </head>
@@ -29,6 +40,15 @@
             <h1>Input:</h1>
             <input type="file" accept="application/pdf" style="font-size: 20px;"><br>
             <button style="margin-top: 2vh; font-size: 20px;" onclick="send()">Grade</button>
+            <span id="statusText"></span>
+            <h1>Instructions:</h1>
+            <ol>
+                <li>Input correct answers for HL and SL in the text boxes. The format is not important as long as all characters that are not A, B, C or D will be removed before reading the answer to the system.</li>
+                <li>Take pictures or scan answer sheets. Each image has to contain the paper fully with a minimum angle and difference from the <a href="/template">template</a>. Images of the papers of the different format are not going to be processes correctly.</li>
+                <li>Convert images to PDF where each page in a file is a separate paper.</li>
+                <li>Upload the PDF file to the input section and click "Grade".</li>
+                <li>Near the button you will be able to see the status of grading. After it is done the output file will be automatically downloaded and named the same as input file, but with a prefix "graded_". Each page there is a graded annotated paper in a same order how it was in the input file.</li>
+            </ol>
         </div>
     </div>
     <script>
@@ -63,12 +83,19 @@
             let formData = new FormData();
             formData.append('hl_correct_answers', JSON.stringify(hlAnswersTextArea.value));
             formData.append('sl_correct_answers', JSON.stringify(slAnswersTextArea.value));
-            let inputFile = document.querySelector('input[type=file]').files[0]
-            formData.append('file', inputFile);
+            let inputFiles = document.querySelector('input[type=file]').files;
+            if (inputFiles.length == 0) {
+                alert('No file selected');
+                return;
+            }
+            formData.append('file', inputFile[0]);
+            let statusText = document.getElementById('statusText');
+            statusText.innerHTML = '<b><i>Grading...</i></b>';
             fetch('/grade', {
                 method: 'POST',
                 body: formData
             }).then(res => res.blob()).then(blob => {
+                statusText.innerHTML = '<b><i>Graded!</i></b>';
                 const objectUrl = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = objectUrl;
