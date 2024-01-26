@@ -2,6 +2,7 @@ from fastapi import Form, File, FastAPI
 from fastapi.responses import FileResponse, Response
 from re import sub
 from grading import grade
+import uvicorn
 
 app: FastAPI = FastAPI()
 
@@ -12,3 +13,6 @@ def root():
 @app.post("/grade")
 def submit(hl_correct_answers = Form(...), sl_correct_answers = Form(...), file = File(...)):
     return Response(content=grade(file.file.read(), [list(sub(r'[^A-D]', '', hl_correct_answers.upper())), list(sub(r'[^A-D]', '', sl_correct_answers.upper()))]), media_type="application/pdf", headers={"Content-Disposition": "inline; filename=output.pdf"})
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
