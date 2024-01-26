@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ib-mcq-answer-sheet-grader</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        textarea {
+            width: 30vw;
+            font-size: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: inline-flex;">
+        <div style="margin-left: 2vw;">
+            <h1>HL answers:</h1>
+            <textarea id="hlAnswers"></textarea>
+        </div>
+        <div style="margin-left: 2vw;">
+            <h1>SL answers:</h1>
+            <textarea id="slAnswers"></textarea>
+        </div>
+        <div style="margin-left: 2vw;">
+            <h1>Input:</h1>
+            <input type="file" accept="application/pdf" style="font-size: 20px;"><br>
+            <button style="margin-top: 2vh; font-size: 20px;" onclick="send()">Grade</button>
+        </div>
+    </div>
+    <script>
+        let hlAnswersTextArea = document.getElementById('hlAnswers');
+        let slAnswersTextArea = document.getElementById('slAnswers');
+
+        hlAnswersTextArea.value = localStorage.getItem('hlAnswers');
+        slAnswersTextArea.value = localStorage.getItem('slAnswers');
+
+        hlAnswersTextArea.style.height = hlAnswersTextArea.scrollHeight + 'px';
+        slAnswersTextArea.style.height = slAnswersTextArea.scrollHeight + 'px';
+
+        hlAnswersTextArea.onkeyup = () => {
+            localStorage.setItem('hlAnswers', hlAnswersTextArea.value);
+        }
+
+        hlAnswersTextArea.oninput = () => {
+            hlAnswersTextArea.style.height = '';
+            hlAnswersTextArea.style.height = hlAnswersTextArea.scrollHeight + 'px';
+        }
+        
+        slAnswersTextArea.onkeyup = () => {
+            localStorage.setItem('slAnswers', slAnswersTextArea.value);
+        }
+
+        slAnswersTextArea.oninput = () => {
+            slAnswersTextArea.style.height = '';
+            slAnswersTextArea.style.height = slAnswersTextArea.scrollHeight + 'px';
+        }
+
+        function send() {
+            let formData = new FormData();
+            formData.append('hl_correct_answers', JSON.stringify(hlAnswersTextArea.value));
+            formData.append('sl_correct_answers', JSON.stringify(slAnswersTextArea.value));
+            let inputFile = document.querySelector('input[type=file]').files[0]
+            formData.append('file', inputFile);
+            fetch('/grade', {
+                method: 'POST',
+                body: formData
+            }).then(res => res.blob()).then(blob => {
+                const objectUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = 'graded_' + inputFile.name;
+                link.click();
+                URL.revokeObjectURL(objectUrl);
+            });
+        }
+    </script>
+</body>
+</html>
