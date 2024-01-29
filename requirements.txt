@@ -6,3 +6,4 @@ opencv-python
 img2pdf
 Pillow
 PyMuPDF
+imutils

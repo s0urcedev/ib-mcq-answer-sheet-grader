@@ -4,13 +4,14 @@ import fitz
 import img2pdf
 import PIL
 import io
+import imutils
 
 template = cv2.imread('template.jpg')
 template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 orb = cv2.ORB_create(500)
 template_kps, template_descs = orb.detectAndCompute(template_gray, None)
 
-def process_image_to_bytes_io(image, bytes_io, correct_answers):
+def process_image_to_bytes_io(image, bytes_io, correct_answers, index=0, debug=False):
     image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image_kps, image_descs = orb.detectAndCompute(image_gray, None)
 
@@ -67,7 +68,6 @@ def process_image_to_bytes_io(image, bytes_io, correct_answers):
                 answers.append(chr(ord('A') + mxi))
             else:
                 answers.append(None)
-            print(f"{len(answers)}. {answers[-1]}")
             if len(answers) - 1 < len(correct_answers[level]):
                 line_coordinates = (box_coordinates[0] + box_steps[0] * 4 + box_steps[2] * c, box_coordinates[1] + box_steps[1] * y)
                 text_coordinates = (box_coordinates[0] + box_steps[0] * mxi + box_steps[2] * c, box_coordinates[1] + box_steps[1] * y + box_dimensions[1] + box_dimensions[1] // 2)
@@ -91,16 +91,21 @@ def process_image_to_bytes_io(image, bytes_io, correct_answers):
     total_text_coordinates = (box_coordinates[0] + box_steps[0] + box_steps[1] // 2 + box_steps[2] * 2, box_coordinates[1] + box_steps[1] * 13)
     cv2.putText(aligned, f"{total_correct}/{len(correct_answers[level])}", total_text_coordinates, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (200, 0, 0), 7, cv2.LINE_AA, False)
 
+    if debug:
+        cv2.imshow(str(index), imutils.resize(aligned, height=600))
+        cv2.waitKey(0)
+        cv2.destroyWindow(str(index))
+
     pil_image = PIL.Image.fromarray(cv2.cvtColor(aligned, cv2.COLOR_BGR2RGB))
     pil_image.save(bytes_io, format='JPEG')
 
-def grade(bytes, correct_answers):
+def grade(bytes, correct_answers, debug=False):
     outputs = []
-    for idx, page in enumerate(fitz.open(stream=bytes, filetype='pdf')): 
+    for index, page in enumerate(fitz.open(stream=bytes, filetype='pdf')): 
         pix = page.get_pixmap()
         bytes = np.frombuffer(pix.samples, dtype=np.uint8)
         image = bytes.reshape(pix.height, pix.width, pix.n)
         bytes_io = io.BytesIO()
-        process_image_to_bytes_io(cv2.cvtColor(image, cv2.COLOR_RGB2BGR), bytes_io, correct_answers)
+        process_image_to_bytes_io(cv2.cvtColor(image, cv2.COLOR_RGB2BGR), bytes_io, correct_answers, index, debug)
         outputs.append(bytes_io.getvalue())
     return img2pdf.convert(outputs)
